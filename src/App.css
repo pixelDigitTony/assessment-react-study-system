@@ -1,0 +1,196 @@
+/* App Container */
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Header */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e1e1e1;
+}
+
+.app-header h1 {
+  margin: 0;
+  color: #333;
+  font-size: 2rem;
+}
+
+.app-header nav {
+  display: flex;
+  gap: 15px;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #4285f4;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.nav-link:hover {
+  background-color: rgba(66, 133, 244, 0.1);
+}
+
+/* Content */
+.app-content {
+  min-height: calc(100vh - 220px);
+}
+
+/* Footer */
+.app-footer {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid #e1e1e1;
+  text-align: center;
+  color: #666;
+}
+
+/* Button styles */
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background-color: #4285f4;
+  color: white;
+}
+
+.btn-secondary {
+  background-color: #f1f3f4;
+  color: #333;
+}
+
+.btn-danger {
+  background-color: #ea4335;
+  color: white;
+}
+
+.btn-success {
+  background-color: #34a853;
+  color: white;
+}
+
+/* Card styles */
+.card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-bottom: 20px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card-title {
+  margin-top: 0;
+  color: #333;
+}
+
+.card-description {
+  color: #666;
+  margin-bottom: 15px;
+}
+
+/* Form styles */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  border-color: #4285f4;
+  background-color: #fff;
+  outline: none;
+}
+
+.form-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* Grid layout */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+/* Flashcard study mode */
+.flashcard {
+  position: relative;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+}
+
+.flashcard-content {
+  padding: 20px;
+  font-size: 1.2rem;
+}
+
+.flashcard-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .app-header nav {
+    margin-top: 15px;
+  }
+  
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
