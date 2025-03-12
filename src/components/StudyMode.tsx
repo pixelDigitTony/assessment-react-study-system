@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getDeckById, updateDeck, addStudySession } from '../utils/localStorage';
 import { CardDeck, FlashCard, StudySession } from '../types';
-import { v4 as uuidv4 } from 'uuid';
 
 const MAX_LIVES = 5;
 
@@ -165,7 +164,7 @@ const StudyMode = () => {
   const endStudySession = (updatedCards: FlashCard[]) => {
     setStudyComplete(true);
     
-    // Calculate study duration in minutes
+    // Calculate study duration in minutes and store it for stats
     const studyDuration = Math.round((Date.now() - sessionStartTime) / 60000);
     
     // Save study session stats
@@ -178,7 +177,18 @@ const StudyMode = () => {
         incorrectAnswers: studyStats.incorrectCards,
         accuracy: calculateAccuracy(studyStats.correctCards, studyStats.incorrectCards),
         completedCards: completedCardIds,
+        duration: studyDuration,
       };
+      
+      // Update the deck with the updated cards if not already done
+      if (deck) {
+        const updatedDeck = {
+          ...deck,
+          cards: updatedCards,
+          updatedAt: Date.now(),
+        };
+        updateDeck(updatedDeck);
+      }
       
       addStudySession(sessionData);
     }

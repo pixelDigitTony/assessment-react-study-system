@@ -36,6 +36,7 @@ export interface StudySession {
   incorrectAnswers: number;
   accuracy: number; // percentage
   completedCards: string[]; // array of card IDs completed in this session
+  duration?: number; // duration in minutes (optional for backward compatibility)
 }
 
 export interface UserStats {
