@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getDeckById, updateDeck } from '../utils/localStorage';
-import { CardDeck, FlashCard } from '../types';
+import { CardDeck } from '../types';
 
 const StudyMode = () => {
   const { deckId } = useParams<{ deckId: string }>();
