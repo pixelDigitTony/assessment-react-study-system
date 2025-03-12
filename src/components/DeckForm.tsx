@@ -83,9 +83,20 @@ const DeckForm = () => {
       return;
     }
 
+    // Process category
+    let finalCategory = formData.category;
+    
+    // If showing new category input but the field is empty, use no category
+    if (showNewCategoryInput) {
+      finalCategory = newCategory.trim();
+      // If they selected "new" but didn't enter a valid new category, clear the category
+      if (!finalCategory) {
+        finalCategory = '';
+      }
+    }
+
     // Create or update deck
     const timestamp = Date.now();
-    const finalCategory = showNewCategoryInput ? newCategory : formData.category;
 
     if (isEditMode && deckId) {
       // Update existing deck
@@ -93,8 +104,8 @@ const DeckForm = () => {
       if (existingDeck) {
         const updatedDeck: CardDeck = {
           ...existingDeck,
-          name: formData.name,
-          description: formData.description,
+          name: formData.name.trim(),
+          description: formData.description.trim(),
           category: finalCategory,
           updatedAt: timestamp,
         };
@@ -105,8 +116,8 @@ const DeckForm = () => {
       // Create new deck
       const newDeck: CardDeck = {
         id: uuidv4(),
-        name: formData.name,
-        description: formData.description,
+        name: formData.name.trim(),
+        description: formData.description.trim(),
         category: finalCategory,
         cards: [],
         createdAt: timestamp,

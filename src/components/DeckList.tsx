@@ -17,9 +17,12 @@ const DeckList = () => {
     // Extract unique categories
     const uniqueCategories = [...new Set(loadedDecks
       .map(deck => deck.category)
-      .filter(category => category) as string[])];
+      .filter(category => category !== undefined && category !== null && category !== '') as string[])];
     
     setCategories(uniqueCategories);
+    
+    // Initialize filtered decks
+    setFilteredDecks(loadedDecks);
   }, []);
 
   // Filter decks when selection changes
@@ -41,7 +44,7 @@ const DeckList = () => {
       // Update categories list if needed
       const uniqueCategories = [...new Set(updatedDecks
         .map(deck => deck.category)
-        .filter(category => category) as string[])];
+        .filter(category => category !== undefined && category !== null && category !== '') as string[])];
       
       setCategories(uniqueCategories);
     }
@@ -70,7 +73,7 @@ const DeckList = () => {
     const decksByCategory: Record<string, CardDeck[]> = {};
     
     // Group for decks with no category
-    const uncategorizedDecks = filteredDecks.filter(deck => !deck.category);
+    const uncategorizedDecks = filteredDecks.filter(deck => !deck.category || deck.category.trim() === '');
     
     // Group decks by their categories
     filteredDecks.forEach(deck => {

@@ -65,8 +65,10 @@ const StudyMode = () => {
     }
   }, [studyCards, deck, studyComplete, studyStats]);
 
-  // Get current card
-  const currentCard = studyCards.length > 0 ? studyCards[currentCardIndex] : null;
+  // Safe access to current card with bounds checking
+  const currentCard = studyCards.length > 0 && currentCardIndex < studyCards.length 
+    ? studyCards[currentCardIndex] 
+    : null;
 
   // Handle revealing the answer
   const handleRevealAnswer = () => {
@@ -81,15 +83,18 @@ const StudyMode = () => {
     const updatedCards = [...deck.cards];
     const cardIndex = updatedCards.findIndex(card => card.id === currentCard.id);
     
-    if (cardIndex !== -1) {
-      updatedCards[cardIndex] = {
-        ...updatedCards[cardIndex],
-        isCorrect,
-        lastStudied: Date.now(),
-        timesCorrect: (updatedCards[cardIndex].timesCorrect || 0) + (isCorrect ? 1 : 0),
-        timesIncorrect: (updatedCards[cardIndex].timesIncorrect || 0) + (isCorrect ? 0 : 1),
-      };
+    if (cardIndex === -1) {
+      console.error('Card not found in deck:', currentCard.id);
+      return;
     }
+
+    updatedCards[cardIndex] = {
+      ...updatedCards[cardIndex],
+      isCorrect,
+      lastStudied: Date.now(),
+      timesCorrect: (updatedCards[cardIndex].timesCorrect || 0) + (isCorrect ? 1 : 0),
+      timesIncorrect: (updatedCards[cardIndex].timesIncorrect || 0) + (isCorrect ? 0 : 1),
+    };
 
     // Track completed card
     if (isCorrect && !completedCardIds.includes(currentCard.id)) {
@@ -213,6 +218,11 @@ const StudyMode = () => {
         isCorrect: undefined,
       })),
     };
+    
+    if (updatedDeck.cards.length === 0) {
+      setError('This deck has no cards to study.');
+      return;
+    }
     
     setDeck(updatedDeck);
     updateDeck(updatedDeck);
