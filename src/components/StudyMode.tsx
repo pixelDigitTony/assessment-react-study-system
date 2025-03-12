@@ -1,23 +1,33 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getDeckById, updateDeck } from '../utils/localStorage';
-import { CardDeck } from '../types';
+import { getDeckById, updateDeck, addStudySession } from '../utils/localStorage';
+import { CardDeck, FlashCard, StudySession } from '../types';
+import { v4 as uuidv4 } from 'uuid';
+
+const MAX_LIVES = 5;
 
 const StudyMode = () => {
   const { deckId } = useParams<{ deckId: string }>();
   const navigate = useNavigate();
+  
   const [deck, setDeck] = useState<CardDeck | null>(null);
+  const [studyCards, setStudyCards] = useState<FlashCard[]>([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [studyComplete, setStudyComplete] = useState(false);
+  const [sessionStartTime, setSessionStartTime] = useState(Date.now());
+  const [completedCardIds, setCompletedCardIds] = useState<string[]>([]);
+  const [lives, setLives] = useState(MAX_LIVES);
+  
   const [studyStats, setStudyStats] = useState({
     totalCards: 0,
     correctCards: 0,
     incorrectCards: 0,
   });
+  
   const [error, setError] = useState<string | null>(null);
 
-  // Load deck data
+  // Load deck data and prepare cards for study
   useEffect(() => {
     if (deckId) {
       const foundDeck = getDeckById(deckId);
@@ -34,11 +44,13 @@ const StudyMode = () => {
             })),
           };
           setDeck(updatedDeck);
+          setStudyCards([...updatedDeck.cards]);
           setStudyStats({
             totalCards: updatedDeck.cards.length,
             correctCards: 0,
             incorrectCards: 0,
           });
+          setSessionStartTime(Date.now());
         }
       } else {
         setError('Deck not found');
@@ -47,7 +59,7 @@ const StudyMode = () => {
   }, [deckId]);
 
   // Get current card
-  const currentCard = deck?.cards[currentCardIndex];
+  const currentCard = studyCards.length > 0 ? studyCards[currentCardIndex] : null;
 
   // Handle revealing the answer
   const handleRevealAnswer = () => {
@@ -60,11 +72,51 @@ const StudyMode = () => {
 
     // Update the current card's status
     const updatedCards = [...deck.cards];
-    updatedCards[currentCardIndex] = {
-      ...updatedCards[currentCardIndex],
-      isCorrect,
-      lastStudied: Date.now(),
-    };
+    const cardIndex = updatedCards.findIndex(card => card.id === currentCard.id);
+    
+    if (cardIndex !== -1) {
+      updatedCards[cardIndex] = {
+        ...updatedCards[cardIndex],
+        isCorrect,
+        lastStudied: Date.now(),
+        timesCorrect: (updatedCards[cardIndex].timesCorrect || 0) + (isCorrect ? 1 : 0),
+        timesIncorrect: (updatedCards[cardIndex].timesIncorrect || 0) + (isCorrect ? 0 : 1),
+      };
+    }
+
+    // Track completed card
+    if (isCorrect && !completedCardIds.includes(currentCard.id)) {
+      setCompletedCardIds(prev => [...prev, currentCard.id]);
+    }
+
+    // Handle lives system
+    if (!isCorrect) {
+      // Reduce lives
+      const newLives = lives - 1;
+      setLives(newLives);
+      
+      // If out of lives, end the study session
+      if (newLives <= 0) {
+        endStudySession(updatedCards);
+        return;
+      }
+      
+      // Put the card back at the end of the deck
+      const updatedStudyCards = [...studyCards];
+      updatedStudyCards.splice(currentCardIndex, 1); // Remove current card
+      
+      // Only add it back if we have more cards to go through first
+      if (updatedStudyCards.length > 0) {
+        updatedStudyCards.push(currentCard); // Add at the end
+      }
+      
+      setStudyCards(updatedStudyCards);
+    } else {
+      // If correct, just remove the card from study cards
+      const updatedStudyCards = [...studyCards];
+      updatedStudyCards.splice(currentCardIndex, 1);
+      setStudyCards(updatedStudyCards);
+    }
 
     // Update stats
     const newStats = {
@@ -88,14 +140,48 @@ const StudyMode = () => {
     setDeck(updatedDeck);
     updateDeck(updatedDeck);
 
-    // Check if we've reached the end of the deck
-    if (currentCardIndex === deck.cards.length - 1) {
-      setStudyComplete(true);
+    // Check if we've reached the end of the study cards
+    const remainingCards = isCorrect ? studyCards.length - 1 : studyCards.length - 1 + (studyCards.length > 0 ? 1 : 0);
+    if (remainingCards <= 0) {
+      endStudySession(updatedCards);
     } else {
-      // Move to the next card
-      setCurrentCardIndex(prevIndex => prevIndex + 1);
+      // If we removed the current card, we don't need to increment the index
+      // The next card will automatically move into the current position
+      if (currentCardIndex >= studyCards.length - 1) {
+        setCurrentCardIndex(0);
+      }
       setShowAnswer(false);
     }
+  };
+
+  // End the study session and save stats
+  const endStudySession = (updatedCards: FlashCard[]) => {
+    setStudyComplete(true);
+    
+    // Calculate study duration in minutes
+    const studyDuration = Math.round((Date.now() - sessionStartTime) / 60000);
+    
+    // Save study session stats
+    if (deckId) {
+      const sessionData: Omit<StudySession, 'id'> = {
+        deckId,
+        date: Date.now(),
+        cardsStudied: studyStats.correctCards + studyStats.incorrectCards,
+        correctAnswers: studyStats.correctCards,
+        incorrectAnswers: studyStats.incorrectCards,
+        accuracy: calculateAccuracy(studyStats.correctCards, studyStats.incorrectCards),
+        completedCards: completedCardIds,
+      };
+      
+      addStudySession(sessionData);
+    }
+  };
+
+  // Calculate accuracy percentage
+  const calculateAccuracy = (correct: number, incorrect: number): number => {
+    const total = correct + incorrect;
+    if (total === 0) return 0;
+    return Math.round((correct / total) * 100);
   };
 
   // Restart the study session
@@ -113,14 +199,35 @@ const StudyMode = () => {
     
     setDeck(updatedDeck);
     updateDeck(updatedDeck);
+    setStudyCards([...updatedDeck.cards]);
     setCurrentCardIndex(0);
     setShowAnswer(false);
     setStudyComplete(false);
+    setLives(MAX_LIVES);
+    setCompletedCardIds([]);
     setStudyStats({
       totalCards: updatedDeck.cards.length,
       correctCards: 0,
       incorrectCards: 0,
     });
+    setSessionStartTime(Date.now());
+  };
+
+  // Render lives display
+  const renderLives = () => {
+    const hearts = [];
+    for (let i = 0; i < MAX_LIVES; i++) {
+      hearts.push(
+        <span key={i} className="life-icon" style={{ opacity: i < lives ? 1 : 0.3 }}>
+          ❤️
+        </span>
+      );
+    }
+    return (
+      <div className="lives-display">
+        <span>Lives:</span> {hearts}
+      </div>
+    );
   };
 
   if (error) {
@@ -135,21 +242,32 @@ const StudyMode = () => {
     );
   }
 
-  if (!deck || !currentCard) {
-    return <div>Loading...</div>;
+  if (!deck) {
+    return <div>Loading deck...</div>;
   }
 
-  // Render study complete screen
+  // Important: Check for study completion first
   if (studyComplete) {
+    const accuracy = calculateAccuracy(studyStats.correctCards, studyStats.incorrectCards);
+    const isFailure = lives <= 0;
+    
     return (
       <div className="study-complete">
-        <h2>Study Session Complete!</h2>
+        <h2>{isFailure ? 'Study Session Failed!' : 'Study Session Complete!'}</h2>
+        
+        {isFailure && (
+          <p className="failure-message">You've run out of lives. Try again to master these cards!</p>
+        )}
+        
         <div className="study-stats">
           <p>Total Cards: {studyStats.totalCards}</p>
           <p>Correct: {studyStats.correctCards}</p>
           <p>Incorrect: {studyStats.incorrectCards}</p>
           <p>
-            Accuracy: {Math.round((studyStats.correctCards / studyStats.totalCards) * 100)}%
+            Accuracy: {accuracy}%
+          </p>
+          <p>
+            Lives Remaining: {lives}/{MAX_LIVES}
           </p>
         </div>
         <div className="study-actions">
@@ -164,13 +282,19 @@ const StudyMode = () => {
     );
   }
 
+  if (!currentCard) {
+    return <div>Loading cards...</div>;
+  }
+
   // Render the study card
   return (
     <div className="study-mode">
       <div className="study-header">
         <h2>Studying: {deck.name}</h2>
+        {renderLives()}
         <p className="card-progress">
-          Card {currentCardIndex + 1} of {deck.cards.length}
+          Card {currentCardIndex + 1} of {studyCards.length} 
+          {studyStats.correctCards > 0 && ` (${studyStats.correctCards} completed)`}
         </p>
       </div>
 

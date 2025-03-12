@@ -1,13 +1,31 @@
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { initializeStorage } from './utils/localStorage';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import './App.css';
 import DeckList from './components/DeckList';
 import DeckForm from './components/DeckForm';
 import Deck from './components/Deck';
 import StudyMode from './components/StudyMode';
+import Stats from './components/Stats';
 
-function App() {
+// Theme toggle component
+const ThemeToggle = () => {
+  const { theme, toggleTheme } = useTheme();
+  
+  return (
+    <button 
+      className="theme-toggle" 
+      onClick={toggleTheme} 
+      aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+    >
+      {theme === 'light' ? '🌙' : '☀️'}
+    </button>
+  );
+};
+
+// Main App component
+function AppContent() {
   // Initialize local storage with demo data if it's the first visit
   useEffect(() => {
     initializeStorage();
@@ -21,6 +39,8 @@ function App() {
           <nav>
             <Link to="/" className="nav-link">Home</Link>
             <Link to="/create-deck" className="nav-link">Create Deck</Link>
+            <Link to="/stats" className="nav-link">Stats</Link>
+            <ThemeToggle />
           </nav>
         </header>
         <main className="app-content">
@@ -30,6 +50,7 @@ function App() {
             <Route path="/edit-deck/:deckId" element={<DeckForm />} />
             <Route path="/deck/:deckId" element={<Deck />} />
             <Route path="/study/:deckId" element={<StudyMode />} />
+            <Route path="/stats" element={<Stats />} />
           </Routes>
         </main>
         <footer className="app-footer">
@@ -37,6 +58,15 @@ function App() {
         </footer>
       </div>
     </Router>
+  );
+}
+
+// Wrap the app with ThemeProvider
+function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }
 
