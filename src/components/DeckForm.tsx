@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import { getDeckById, addDeck, updateDeck } from '../utils/localStorage';
+import { getDeckById, addDeck, updateDeck, getDecks } from '../utils/localStorage';
 import { CardDeck } from '../types';
 
 const DeckForm = () => {
@@ -12,21 +12,32 @@ const DeckForm = () => {
   const [formData, setFormData] = useState<{
     name: string;
     description: string;
+    category: string;
   }>({
     name: '',
     description: '',
+    category: '',
   });
 
+  const [existingCategories, setExistingCategories] = useState<string[]>([]);
+  const [newCategory, setNewCategory] = useState('');
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load deck data if in edit mode
+  // Load deck data if in edit mode and extract existing categories
   useEffect(() => {
+    // Get all existing categories from decks
+    const decks = getDecks();
+    const categories = [...new Set(decks.map(deck => deck.category).filter(Boolean) as string[])];
+    setExistingCategories(categories);
+
     if (isEditMode && deckId) {
       const deck = getDeckById(deckId);
       if (deck) {
         setFormData({
           name: deck.name,
           description: deck.description,
+          category: deck.category || '',
         });
       } else {
         setError('Deck not found');
@@ -34,12 +45,33 @@ const DeckForm = () => {
     }
   }, [isEditMode, deckId]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value,
     }));
+
+    // If "Add New Category" is selected
+    if (name === 'category' && value === 'new') {
+      setShowNewCategoryInput(true);
+    }
+  };
+
+  const handleNewCategoryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewCategory(e.target.value);
+  };
+
+  const handleAddNewCategory = () => {
+    if (newCategory.trim()) {
+      setExistingCategories(prev => [...prev, newCategory]);
+      setFormData(prev => ({
+        ...prev,
+        category: newCategory,
+      }));
+      setNewCategory('');
+      setShowNewCategoryInput(false);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -53,6 +85,7 @@ const DeckForm = () => {
 
     // Create or update deck
     const timestamp = Date.now();
+    const finalCategory = showNewCategoryInput ? newCategory : formData.category;
 
     if (isEditMode && deckId) {
       // Update existing deck
@@ -62,6 +95,7 @@ const DeckForm = () => {
           ...existingDeck,
           name: formData.name,
           description: formData.description,
+          category: finalCategory,
           updatedAt: timestamp,
         };
         updateDeck(updatedDeck);
@@ -73,6 +107,7 @@ const DeckForm = () => {
         id: uuidv4(),
         name: formData.name,
         description: formData.description,
+        category: finalCategory,
         cards: [],
         createdAt: timestamp,
         updatedAt: timestamp,
@@ -113,6 +148,46 @@ const DeckForm = () => {
             placeholder="Enter a description for your deck"
           />
         </div>
+
+        <div className="form-group">
+          <label htmlFor="category" className="form-label">Category</label>
+          <select
+            id="category"
+            name="category"
+            value={formData.category}
+            onChange={handleInputChange}
+            className="form-select"
+          >
+            <option value="">-- Select Category --</option>
+            {existingCategories.map(category => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+            <option value="new">+ Add New Category</option>
+          </select>
+        </div>
+
+        {showNewCategoryInput && (
+          <div className="form-group new-category-input">
+            <label htmlFor="newCategory" className="form-label">New Category Name</label>
+            <div className="input-with-button">
+              <input
+                type="text"
+                id="newCategory"
+                value={newCategory}
+                onChange={handleNewCategoryChange}
+                className="form-input"
+                placeholder="Enter new category name"
+              />
+              <button 
+                type="button"
+                onClick={handleAddNewCategory}
+                className="btn btn-secondary"
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="form-actions">
           <button type="submit" className="btn btn-primary">

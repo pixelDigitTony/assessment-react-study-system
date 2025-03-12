@@ -58,6 +58,14 @@ const StudyMode = () => {
     }
   }, [deckId]);
 
+  // Get current card and check for study completion
+  useEffect(() => {
+    // If there are no more study cards and we haven't marked the session as complete yet
+    if (studyCards.length === 0 && deck && !studyComplete && studyStats.correctCards + studyStats.incorrectCards > 0) {
+      endStudySession(deck.cards);
+    }
+  }, [studyCards, deck, studyComplete, studyStats]);
+
   // Get current card
   const currentCard = studyCards.length > 0 ? studyCards[currentCardIndex] : null;
 
@@ -140,18 +148,17 @@ const StudyMode = () => {
     setDeck(updatedDeck);
     updateDeck(updatedDeck);
 
-    // Check if we've reached the end of the study cards
-    const remainingCards = isCorrect ? studyCards.length - 1 : studyCards.length - 1 + (studyCards.length > 0 ? 1 : 0);
-    if (remainingCards <= 0) {
+    // If we're removing the last card, mark as complete now
+    if (studyCards.length === 1) {
       endStudySession(updatedCards);
-    } else {
-      // If we removed the current card, we don't need to increment the index
-      // The next card will automatically move into the current position
-      if (currentCardIndex >= studyCards.length - 1) {
-        setCurrentCardIndex(0);
-      }
-      setShowAnswer(false);
+      return;
     }
+
+    // Adjust current card index if needed
+    if (currentCardIndex >= studyCards.length - 1) {
+      setCurrentCardIndex(0);
+    }
+    setShowAnswer(false);
   };
 
   // End the study session and save stats
