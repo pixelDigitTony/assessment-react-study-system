@@ -12,7 +12,7 @@ const demoDecks: CardDeck[] = [
     description: 'Basic concepts in JavaScript programming language',
     cards: [
       { id: 'js-1', question: 'What is JavaScript?', answer: 'JavaScript is a programming language that enables interactive web pages and is an essential part of web applications.' },
-      { id: 'js-2', question: 'What is a closure in JavaScript?', answer: 'A closure is a function that has access to its own scope, the outer function\'s scope, and the global scope.' },
+      { id: 'js-2', question: 'What is a closure in JavaScript?', answer: 'A closure is a function that has access to its own scope, the outer function scope, and the global scope.' },
       { id: 'js-3', question: 'What is the difference between let and var?', answer: 'let is block-scoped, while var is function-scoped. let was introduced in ES6.' },
       { id: 'js-4', question: 'What is a Promise?', answer: 'A Promise is an object representing the eventual completion or failure of an asynchronous operation.' },
     ],
